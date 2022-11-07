@@ -3,7 +3,6 @@
 import os
 import time
 import zmq
-import signal
 import importlib
 import pickle
 from pathlib import Path
