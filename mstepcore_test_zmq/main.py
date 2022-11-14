@@ -19,13 +19,13 @@ root = Path().cwd()
 
 # API backend
 # vars
-def getVar(var_name):
+def getVar(vars, var_name):
     if var_name in vars:
         print(f"'{var_name}' value '{vars[var_name]}' sent.")
         return vars[var_name]
     return False
 
-def setVar(var_name, value):
+def setVar(vars, var_name, value):
     vars[var_name] = value
     print(f"'{var_name}' set to '{value}'.")
     return True
@@ -98,9 +98,9 @@ def wrFile(file_path, content):
         print(f"Error: {error}")
         return False
 
-def saver():
+def saver(vars):
     print("Saver")
-    global vars
+    # global vars
 
     while True:
         with open(SAVED_FILE, "wb") as file:
@@ -109,64 +109,68 @@ def saver():
             print("saved")
         time.sleep(5)
 
-
-print("Loading saved variables from file.")
-try:
-    with open(SAVED_FILE, "rb") as file:
-        vars = pickle.load(file)
-        print("loaded")
-except EOFError:
+def main():
     vars = {}
-    print("nothing was saved.")
-print(f"vars: {vars}")
 
-print("Running internal threads:")
-Thread(target = saver, daemon = True).start()
+    print("Loading saved variables from file.")
+    try:
+        with open(SAVED_FILE, "rb") as file:
+            vars = pickle.load(file)
+            print("loaded")
+    except EOFError:
+        print("nothing was saved.")
+    print(f"vars: {vars}")
+
+    print("Running internal threads:")
+    Thread(target = saver, daemon = True, args=(vars, )).start()
 
 
-print("Running modules.")
-modules_list = os.listdir("modules")
-modules_threads = {}
-for module_name in modules_list:
-    if ".py" in module_name:
-        print(f"Loading module: {module_name}")
-        module = f"modules.{module_name}".strip(".py")
-        module = importlib.import_module(module)
-        modules_threads[module_name] = Thread(target = module.module_run, args = (context,), daemon = True)
-        print(f"Running module: {module_name}")
-        modules_threads[module_name].start()
+    print("Running modules.")
+    modules_list = os.listdir("modules")
+    modules_threads = {}
+    for module_name in modules_list:
+        if ".py" in module_name:
+            print(f"Loading module: {module_name}")
+            module = f"modules.{module_name}".strip(".py")
+            module = importlib.import_module(module)
+            modules_threads[module_name] = Thread(target = module.module_run, args = (context,), daemon = True)
+            print(f"Running module: {module_name}")
+            modules_threads[module_name].start()
 
-print("Running main loop.")
-while True:
-    res = False
-    message = socket.recv_string()
-    message = message.split("<delim>")
-    message_len = len(message)
+    print("Running main loop.")
+    while True:
+        res = False
+        message = socket.recv_string()
+        message = message.split("<delim>")
+        message_len = len(message)
 
-    if message_len == 1:
-        pass
-    elif message_len == 2:
-        arg = message[1]
-        if message[0] == "getVar":
-            res = getVar(arg)
-        elif message[0] == "mkDir":
-            res = mkDir(arg)
-        elif message[0] == "rmDir":
-            res = rmDir(arg)
-        elif message[0] == "lsDir":
-            res = lsDir(arg)
-        elif message[0] == "mkFile":
-            res = mkFile(arg)
-        elif message[0] == "rmFile":
-            res = rmFile(arg)
-        elif message[0] == "rdFile":
-            res = res = rdFile(arg)
-    elif message_len == 3:
-        arg1 = message[1]
-        arg2 = message[2]
-        if message[0] == "setVar":
-            res = setVar(arg1, arg2)
-        elif message[0] == "wrFile":
-            res = wrFile(arg1, arg2)
+        if message_len == 1:
+            pass
+        elif message_len == 2:
+            arg = message[1]
+            if message[0] == "getVar":
+                res = getVar(vars, arg)
+            elif message[0] == "mkDir":
+                res = mkDir(arg)
+            elif message[0] == "rmDir":
+                res = rmDir(arg)
+            elif message[0] == "lsDir":
+                res = lsDir(arg)
+            elif message[0] == "mkFile":
+                res = mkFile(arg)
+            elif message[0] == "rmFile":
+                res = rmFile(arg)
+            elif message[0] == "rdFile":
+                res = res = rdFile(arg)
+        elif message_len == 3:
+            arg1 = message[1]
+            arg2 = message[2]
+            if message[0] == "setVar":
+                res = setVar(vars, arg1, arg2)
+            elif message[0] == "wrFile":
+                res = wrFile(arg1, arg2)
 
-    socket.send_string(str(res))
+        socket.send_string(str(res))
+
+if __name__ == "__main__":
+    main()
