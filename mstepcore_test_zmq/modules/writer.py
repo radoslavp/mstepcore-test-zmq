@@ -1,6 +1,6 @@
 import random
 import time
-from mstep_lib import MstepLib
+from ..mstep_lib import MstepLib
 
 def module_run(context):
     mstep = MstepLib(context)

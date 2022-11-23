@@ -1,5 +1,5 @@
 import time
-from mstep_lib import MstepLib
+from ..mstep_lib import MstepLib
 
 def module_run(context):
     LOG_FILE = "values.log"

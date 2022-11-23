@@ -126,13 +126,15 @@ def main():
 
 
     print("Running modules.")
-    modules_list = os.listdir("modules")
+    project_dir = os.path.dirname(__file__)
+    modules_list = os.listdir(f"{project_dir}/modules")
     modules_threads = {}
     for module_name in modules_list:
         if ".py" in module_name:
+            module_name = module_name.strip(".py")
             print(f"Loading module: {module_name}")
-            module = f"modules.{module_name}".strip(".py")
-            module = importlib.import_module(module)
+            module = f".modules.{module_name}"
+            module = importlib.import_module(module, package = "mstepcore_test_zmq")
             modules_threads[module_name] = Thread(target = module.module_run, args = (context,), daemon = True)
             print(f"Running module: {module_name}")
             modules_threads[module_name].start()
