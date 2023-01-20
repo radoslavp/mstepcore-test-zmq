@@ -1,4 +1,5 @@
 import time
+import spidev
 from ..mstep_lib import MstepLib
 
 def module_run(context):
