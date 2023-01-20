@@ -130,6 +130,9 @@ def main():
     modules_list = os.listdir(f"{project_dir}/modules")
     modules_threads = {}
     for module_name in modules_list:
+        if module_name == "__init__.py":
+            continue
+
         if ".py" in module_name:
             module_name = module_name.strip(".py")
             print(f"Loading module: {module_name}")
