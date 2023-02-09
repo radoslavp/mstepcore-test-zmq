@@ -48,8 +48,8 @@ def module_run(context):
         curr_visi = mstep.getVar('visi')
 
         calc_value("temp", curr_temp, temps_seq)
-        calc_value("hum", curr_temp, temps_seq)
-        calc_value("pres", curr_temp, temps_seq)
-        calc_value("visi", curr_temp, temps_seq)
+        calc_value("hum", curr_hum, hums_seq)
+        calc_value("pres", curr_pres, pres_seq)
+        calc_value("visi", curr_visi, visi_seq)
 
         time.sleep(10)
