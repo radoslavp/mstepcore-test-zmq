@@ -127,6 +127,7 @@ def module_run(context):
                 t_fine = (var1 + var2)
                 T = t_fine / 5120.0
                 
+                debugPrint(f"Temperature: {T}")
                 mstep.setVar('temp', T)
                 
                 # pressure            
@@ -147,6 +148,7 @@ def module_run(context):
                 var2 = pressure * dig_P8 / 32768.0
                 P = (pressure + (var1 + var2 + dig_P7) / 16.0) / 100.0
         
+                debugPrint(f"Pressure: {P}")
                 mstep.setVar('pres', P)
                 
                 # humidity            
@@ -163,7 +165,8 @@ def module_run(context):
 
                 humidity = var6 * (1.0 - dig_H1 * var6 / 524288.0)
                 H = max(0.0, min(100.0, humidity))
-                
+
+                debugPrint(f"Humidity: {H}")                
                 mstep.setVar('hum', H)
                 
                 time.sleep(10)
