@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # sources: 
 # https://github.com/rm-hull/bme280/blob/master/bme280/__init__.py
 # https://github.com/rm-hull/bme280/blob/master/bme280/reader.py
