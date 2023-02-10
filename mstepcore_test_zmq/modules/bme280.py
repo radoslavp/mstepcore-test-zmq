@@ -97,8 +97,6 @@ def module_run(context):
             debugPrint(f"dig_H5: {dig_H5}")
             debugPrint(f"dig_H6: {dig_H6}")
 
-            print("Measurements:")
-            print("-------------")
             # measuring loop
             while True:
                 # CURRENT VALUES
