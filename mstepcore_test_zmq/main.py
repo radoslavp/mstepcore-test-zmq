@@ -5,6 +5,7 @@ import time
 import zmq
 import importlib
 import pickle
+import schedule
 from pathlib import Path
 from threading import Thread
 # from multiprocessing import Process
@@ -108,9 +109,34 @@ def saver(vars):
             pickle.dump(vars, file)
             print("saved")
         time.sleep(5)
+        
+def scheduler(events):
+    print("Scheduler")
+    
+    def event_job():
+        print("Event")
+    
+    for e in evnets:
+        time_hours = int(e[1].split(":")[0])
+        time_minutes = int(e[1].split(":")[1])
+        time_seconds = int(e[1].split(":")[2])
+        time_shift = e[2]
+        
+        callbacks = e[3]
+        for c in callbacks:
+            if time_hours != 0:
+                schedlule.every(time_hours).hours.at(time_shift).do(event_job)
+            elif time_minutes != 0:
+                schedlule.every(time_minutes).minutes.at(time_shift).do(event_job)
+            elif time_secondss != 0:
+                schedlule.every(time_secondss).seconds.at(time_shift).do(event_job)
+                
 
 def main():
     vars = {}
+    events = {
+        {"event1", "00:01:00", "00:00:00", ["callback1", "callback2"]}
+    }
 
     print("Loading saved variables from file.")
     try:
@@ -123,7 +149,7 @@ def main():
 
     print("Running internal threads:")
     Thread(target = saver, daemon = True, args=(vars, )).start()
-
+    Thread(target = scheduler, daemon = True, args=(events, )).start()
 
     print("Running modules.")
     project_dir = os.path.dirname(__file__)
