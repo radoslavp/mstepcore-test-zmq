@@ -5,7 +5,7 @@ import time
 import zmq
 import importlib
 import pickle
-import schedule
+import datetime
 from pathlib import Path
 from threading import Thread
 # from multiprocessing import Process
@@ -112,30 +112,41 @@ def saver(vars):
         
 def scheduler(events):
     print("Scheduler")
-    
+
+    sched_table = {}
+
     def event_job():
         print("Event")
     
-    for e in evnets:
-        time_hours = int(e[1].split(":")[0])
-        time_minutes = int(e[1].split(":")[1])
-        time_seconds = int(e[1].split(":")[2])
-        time_shift = e[2]
+    for name,e in events.items():
+        x = time.strptime(e[0],'%H:%M:%S')
+        y = time.strptime(e[1],'%H:%M:%S')
+        interval_sec = datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds()
+        shift_sec = datetime.timedelta(hours=y.tm_hour,minutes=y.tm_min,seconds=y.tm_sec).total_seconds()
+        event_sec = int(interval_sec + shift_sec)
         
-        callbacks = e[3]
-        for c in callbacks:
-            if time_hours != 0:
-                schedlule.every(time_hours).hours.at(time_shift).do(event_job)
-            elif time_minutes != 0:
-                schedlule.every(time_minutes).minutes.at(time_shift).do(event_job)
-            elif time_secondss != 0:
-                schedlule.every(time_secondss).seconds.at(time_shift).do(event_job)
-                
+        sched_table[event_sec] = name
+        
+    while True:
+        curr_secs = int(time.time())
+        
+        for secs,name in sched_table.items():
+            #print(name, secs, curr_secs, curr_secs % secs)
+            
+            if curr_secs % secs == 0:
+                print(name, time.strftime("%H:%M:%S"))
+        
+        time.sleep(1)
 
 def main():
     vars = {}
     events = {
-        {"event1", "00:01:00", "00:00:00", ["callback1", "callback2"]}
+        "event1": ["00:00:01", "00:00:03", ["callback1", "callback2"]],
+        "event2": ["00:00:05", "00:00:00", ["callback1", "callback2"]],
+        "event3": ["00:00:10", "00:00:00", ["callback1", "callback2"]],
+        "event4": ["00:00:05", "00:00:00", ["callback1", "callback2"]],
+        "event5": ["00:01:00", "00:00:00", ["callback1", "callback2"]],
+        "event6": ["00:00:01", "00:00:00", ["callback1", "callback2"]]
     }
 
     print("Loading saved variables from file.")
