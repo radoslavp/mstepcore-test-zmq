@@ -6,8 +6,10 @@ import zmq
 import importlib
 import pickle
 import datetime
+import sys
+import inspect
 from pathlib import Path
-from threading import Thread
+from threading import Thread, Timer
 # from multiprocessing import Process
 
 SAVED_FILE = "vars.saved"
@@ -110,9 +112,14 @@ def saver(vars):
             print("saved")
         time.sleep(5)
         
-def scheduler(events):
+def scheduler(events, callbacks):
     print("Scheduler")
-
+    user_modules_dir = "/home/root/modules/"
+    sys.path.append(user_modules_dir)
+    
+    print(f"Changing to {user_modules_dir}")
+    os.chdir(user_modules_dir)
+    
     sched_table = {}
 
     def event_job():
@@ -121,32 +128,52 @@ def scheduler(events):
     for name,e in events.items():
         x = time.strptime(e[0],'%H:%M:%S')
         y = time.strptime(e[1],'%H:%M:%S')
-        interval_sec = datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds()
-        shift_sec = datetime.timedelta(hours=y.tm_hour,minutes=y.tm_min,seconds=y.tm_sec).total_seconds()
-        event_sec = int(interval_sec + shift_sec)
+        interval_secs = int(datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds())
+        shift_secs = int(datetime.timedelta(hours=y.tm_hour,minutes=y.tm_min,seconds=y.tm_sec).total_seconds())
         
-        sched_table[event_sec] = name
+        sched_table[name] = [interval_secs, shift_secs]
         
     while True:
         curr_secs = int(time.time())
         
-        for secs,name in sched_table.items():
-            #print(name, secs, curr_secs, curr_secs % secs)
+        for name,times in sched_table.items():            
+            interval_secs = times[0]
+            shift_secs = times[1]
             
-            if curr_secs % secs == 0:
+            if curr_secs % interval_secs == 0:
                 print(name, time.strftime("%H:%M:%S"))
+                
+                for event,cback in callbacks.items():
+                    print(event, name)
+                    if event == name:
+                        print(f"running cback: {cback[0]}.{cback[1]}")
+                        module = importlib.import_module(cback[0], package="modules")
+                    
+                        c = None
+                        funcs = inspect.getmembers(module, inspect.isfunction)
+                        for f in funcs:
+                            if f[0] == cback[1]:
+                                c = f[1]
+                        if c:
+                            Timer(shift_secs, c, args = (context,)).start()
+                        else:
+                            print(f"Callback {cback[1]} not found.")
         
         time.sleep(1)
 
 def main():
     vars = {}
     events = {
-        "event1": ["00:00:01", "00:00:03", ["callback1", "callback2"]],
-        "event2": ["00:00:05", "00:00:00", ["callback1", "callback2"]],
-        "event3": ["00:00:10", "00:00:00", ["callback1", "callback2"]],
-        "event4": ["00:00:05", "00:00:00", ["callback1", "callback2"]],
-        "event5": ["00:01:00", "00:00:00", ["callback1", "callback2"]],
-        "event6": ["00:00:01", "00:00:00", ["callback1", "callback2"]]
+        "event1": ["00:00:10", "00:00:03"],
+        "event2": ["00:00:05", "00:00:00"],
+        "event3": ["00:00:10", "00:00:00"],
+        "event4": ["00:00:05", "00:00:00"],
+        "event5": ["00:01:00", "00:00:00"],
+        "event6": ["00:00:01", "00:00:00"]
+    }
+    
+    callbacks = {
+        "event1": ["cback_module", "cback"]
     }
 
     print("Loading saved variables from file.")
@@ -160,7 +187,7 @@ def main():
 
     print("Running internal threads:")
     Thread(target = saver, daemon = True, args=(vars, )).start()
-    Thread(target = scheduler, daemon = True, args=(events, )).start()
+    Thread(target = scheduler, daemon = True, args=(events, callbacks)).start()
 
     print("Running modules.")
     project_dir = os.path.dirname(__file__)
