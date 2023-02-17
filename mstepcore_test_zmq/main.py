@@ -20,6 +20,8 @@ socket.bind("tcp://*:5555")
 
 root = Path().cwd()
 
+###########################
+
 # API backend
 # vars
 def getVar(vars, var_name):
@@ -100,7 +102,10 @@ def wrFile(file_path, content):
     except Exception as error:
         print(f"Error: {error}")
         return False
+        
+###########################
 
+# internal thread functions
 def saver(vars):
     print("Saver")
     # global vars
@@ -160,6 +165,8 @@ def scheduler(events, callbacks):
                             print(f"Callback {cback[1]} not found.")
         
         time.sleep(1)
+
+###########################
 
 def main():
     vars = {}
