@@ -53,3 +53,8 @@ class MstepLib():
     def wrFile(self, file_path, content):
         command = ["wrFile", file_path, str(content)]
         self.processCommand(command)
+    
+    # callbacks
+    def regCback(self, event, module, callback):
+        command = ["regCback", event, module, callback]
+        self.processCommand(command)

@@ -13,6 +13,7 @@ from threading import Thread, Timer
 # from multiprocessing import Process
 
 SAVED_FILE = "vars.saved"
+USER_MODULES_DIR = "/home/root/modules/"
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)
@@ -102,7 +103,19 @@ def wrFile(file_path, content):
     except Exception as error:
         print(f"Error: {error}")
         return False
-        
+
+# callbacks
+def regCback(callbacks, event, module, callback):
+    if event in callbacks:
+        for cback in callbacks[event]:
+            if cback[0] == module and cback[1] == callback:
+                return False	# already registered
+    
+    callbacks[event] = []
+    callbacks[event].append([module, callback])
+    print(f"Callback '{callback}' from module '{module}' registered to event '{event}'.")
+    return True
+    
 ###########################
 
 # internal thread functions
@@ -116,14 +129,29 @@ def saver(vars):
             pickle.dump(vars, file)
             print("saved")
         time.sleep(5)
+
+def modulesInitializer(callbacks):
+    print("modulesInitializer")
+    
+    p = Path(USER_MODULES_DIR)
+
+    if p.exists():
+        for p in p.iterdir():
+            path_parts = p.as_posix().split(".")
+            
+            if len(path_parts) == 2 and path_parts[1] == "py":
+                module_name = path_parts[0].split("/")[-1]
+                print(f"module_name: {module_name}")
+            
+                module = importlib.import_module(module_name, package="modules")
+                module.initModule(context)
         
 def scheduler(events, callbacks):
     print("Scheduler")
-    user_modules_dir = "/home/root/modules/"
-    sys.path.append(user_modules_dir)
+    sys.path.append(USER_MODULES_DIR)
     
-    print(f"Changing to {user_modules_dir}")
-    os.chdir(user_modules_dir)
+    print(f"Changing to {USER_MODULES_DIR}")
+    os.chdir(USER_MODULES_DIR)
     
     sched_table = {}
 
@@ -148,21 +176,21 @@ def scheduler(events, callbacks):
             if curr_secs % interval_secs == 0:
                 print(name, time.strftime("%H:%M:%S"))
                 
-                for event,cback in callbacks.items():
-                    print(event, name)
-                    if event == name:
-                        print(f"running cback: {cback[0]}.{cback[1]}")
-                        module = importlib.import_module(cback[0], package="modules")
+                for event,cbacks in callbacks.items():
+                    for cback in cbacks:
+                        if event == name:
+                            print(f"Scheduling callback {cback[0]}.{cback[1]} in {shift_secs} s")
+                            module = importlib.import_module(cback[0], package="modules")
                     
-                        c = None
-                        funcs = inspect.getmembers(module, inspect.isfunction)
-                        for f in funcs:
-                            if f[0] == cback[1]:
-                                c = f[1]
-                        if c:
-                            Timer(shift_secs, c, args = (context,)).start()
-                        else:
-                            print(f"Callback {cback[1]} not found.")
+                            c = None
+                            funcs = inspect.getmembers(module, inspect.isfunction)
+                            for f in funcs:
+                                if f[0] == cback[1]:
+                                    c = f[1]
+                            if c:
+                                Timer(shift_secs, c).start()
+                            else:
+                                print(f"Callback {cback[1]} not found.")
         
         time.sleep(1)
 
@@ -180,7 +208,9 @@ def main():
     }
     
     callbacks = {
-        "event1": ["cback_module", "cback"]
+#        "event1": [
+#            ["cback_module", "cback"]
+#        ]
     }
 
     print("Loading saved variables from file.")
@@ -194,8 +224,9 @@ def main():
 
     print("Running internal threads:")
     Thread(target = saver, daemon = True, args=(vars, )).start()
-    Thread(target = scheduler, daemon = True, args=(events, callbacks)).start()
-
+    Thread(target = modulesInitializer, daemon = True, args=(callbacks, )).start()
+    Thread(target = scheduler, daemon = True, args=(events, callbacks, )).start()
+    
     print("Running modules.")
     project_dir = os.path.dirname(__file__)
     modules_list = os.listdir(f"{project_dir}/modules")
@@ -245,7 +276,13 @@ def main():
                 res = setVar(vars, arg1, arg2)
             elif message[0] == "wrFile":
                 res = wrFile(arg1, arg2)
-
+        elif message_len == 4:
+            arg1 = message[1]
+            arg2 = message[2]
+            arg3 = message[3]
+            if message[0] == "regCback":
+                res = regCback(callbacks, arg1, arg2, arg3)
+                
         socket.send_string(str(res))
 
 if __name__ == "__main__":
