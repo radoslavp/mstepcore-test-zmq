@@ -8,6 +8,7 @@ import pickle
 import datetime
 import sys
 import inspect
+from mstepcore_test_zmq.common import *
 from pathlib import Path
 from threading import Thread, Timer
 # from multiprocessing import Process
@@ -27,13 +28,13 @@ root = Path().cwd()
 # vars
 def getVar(vars, var_name):
     if var_name in vars:
-        print(f"'{var_name}' value '{vars[var_name]}' sent.")
+        debugPrint(f"'{var_name}' value '{vars[var_name]}' sent.")
         return vars[var_name]
     return False
 
 def setVar(vars, var_name, value):
     vars[var_name] = value
-    print(f"'{var_name}' set to '{value}'.")
+    debugPrint(f"'{var_name}' set to '{value}'.")
     return True
 
 # dirs
@@ -41,7 +42,7 @@ def mkDir(dir_path):
     p = Path(root / dir_path)
     if not p.exists():
         p.mkdir()
-        print(f"crated dir '{root}/{dir_path}'.")
+        debugPrint(f"crated dir '{root}/{dir_path}'.")
         return True
     return False
 
@@ -49,7 +50,7 @@ def rmDir(dir_path):
     p = Path(root / dir_path)
     if p.exists():
         p.rmdir()
-        print(f"removed dir '{root}/{dir_path}'.")
+        debugPrint(f"removed dir '{root}/{dir_path}'.")
         return True
     return False
 
@@ -61,7 +62,7 @@ def lsDir(dir_path):
         for p in p.iterdir():
             dir_list.append(p.as_posix())
 
-        print(f"listed '{root}/{dir_path}'.")
+        debugPrint(f"listed '{root}/{dir_path}'.")
         return dir_list
     return False
 
@@ -70,7 +71,7 @@ def mkFile(file_path):
     p = Path(root / file_path)
     if not p.exists():
         p.touch()
-        print(f"created file '{root}/{file_path}'.")
+        debugPrint(f"created file '{root}/{file_path}'.")
         return True
     return False
 
@@ -78,7 +79,7 @@ def rmFile(file_path):
     p = Path(root / file_path)
     if p.exists():
         p.unlink()
-        print(f"removed file '{root}/{file_path}'.")
+        debugPrint(f"removed file '{root}/{file_path}'.")
         return True
     return False
 
@@ -86,10 +87,10 @@ def rdFile(file_path):
     try:
         p = Path(root / file_path)
         with p.open(mode = "r") as file:
-            print(f"sent content of '{root}/{file_path}'.")
+            debugPrint(f"sent content of '{root}/{file_path}'.")
             return file.read()
     except Exception as error:
-        print(f"Error: {error}")
+        errorPrint(f"Error: {error}")
         return False
 
 def wrFile(file_path, content):
@@ -98,10 +99,10 @@ def wrFile(file_path, content):
         with p.open(mode = "a") as file:
             file.write(content + "\n")
             # file.close()
-            print(f"written '{content}' to '{root}/{file_path}'.")
+            debugPrint(f"written '{content}' to '{root}/{file_path}'.")
             return True
     except Exception as error:
-        print(f"Error: {error}")
+        errorPrint(f"Error: {error}")
         return False
 
 # callbacks
@@ -125,9 +126,9 @@ def saver(vars):
 
     while True:
         with open(SAVED_FILE, "wb") as file:
-            print(f"vars: {vars}")
+            debugPrint(f"vars: {vars}")
             pickle.dump(vars, file)
-            print("saved")
+            debugPrint("saved")
         time.sleep(5)
 
 def modulesInitializer(callbacks):
@@ -155,9 +156,6 @@ def scheduler(events, callbacks):
     
     sched_table = {}
 
-    def event_job():
-        print("Event")
-    
     for name,e in events.items():
         x = time.strptime(e[0],'%H:%M:%S')
         y = time.strptime(e[1],'%H:%M:%S')
@@ -174,12 +172,10 @@ def scheduler(events, callbacks):
             shift_secs = times[1]
             
             if curr_secs % interval_secs == 0:
-                print(name, time.strftime("%H:%M:%S"))
-                
                 for event,cbacks in callbacks.items():
                     for cback in cbacks:
                         if event == name:
-                            print(f"Scheduling callback {cback[0]}.{cback[1]} in {shift_secs} s")
+                            print(time.strftime("%H:%M:%S") + f" {name}: Scheduling callback {cback[0]}.{cback[1]} in {shift_secs} s")
                             module = importlib.import_module(cback[0], package="modules")
                     
                             c = None
@@ -207,11 +203,7 @@ def main():
         "event6": ["00:00:01", "00:00:00"]
     }
     
-    callbacks = {
-#        "event1": [
-#            ["cback_module", "cback"]
-#        ]
-    }
+    callbacks = {}
 
     print("Loading saved variables from file.")
     try:

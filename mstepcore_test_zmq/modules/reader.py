@@ -1,6 +1,6 @@
 import time
 import spidev
-from ..mstep_lib import MstepLib
+from mstepcore_test_zmq.mstep_lib import MstepLib
 
 def module_run(context):
     mstep = MstepLib(context)
@@ -22,14 +22,11 @@ def module_run(context):
             
             var_value = float(var_value)
 
-            print(f"Current {variable_label[var_name]}: {var_value}")
-
             var_seq.append(var_value)
             if len(var_seq) >= 6:
                 var_seq.pop(0)
 
             avg_var_value = sum(var_seq)/6
-            print(f"Average {variable_label[var_name]}: {avg_var_value}")
 
             avg_var_name = "avg_" + var_name
             mstep.setVar(avg_var_name, avg_var_value)

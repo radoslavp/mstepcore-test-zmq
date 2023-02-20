@@ -6,19 +6,18 @@
 
 import spidev
 import time
-from ..mstep_lib import MstepLib
-
-debug = False
+from mstepcore_test_zmq.common import *
+from mstepcore_test_zmq.mstep_lib import MstepLib
 
 spi = spidev.SpiDev()
 spi.open(0,0)
 
-def debugPrint(msg):
-    if debug:
-        print(f"Debug: {msg}")
+#def debugPrint(msg):
+#    if debug:
+#        print(f"Debug: {msg}")
         
-def errorPrint(msg):
-    print(f"Error: {msg}")
+#def errorPrint(msg):
+#    print(f"Error: {msg}")
 
 def read8(addr):
     return spi.xfer([addr, 0x00])[1]
