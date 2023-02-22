@@ -5,9 +5,13 @@ from ..mstep_lib import MstepLib
 ser = None
 
 def ser_write(msg):
+    global ser
+    
     ser.write(msg + b'\r\n')
 
 def module_run(context):
+    global ser
+    
     try:
         with serial.Serial('/dev/ttyGS0') as ser: 
             mstep = MstepLib(context)
