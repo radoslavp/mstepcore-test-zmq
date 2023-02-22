@@ -34,7 +34,7 @@ def module_run(context):
                         val = bytes(mstep.getVar(var), "utf-8")
                         ser_write(val)
 
-                        buff = b''
+                    buff = b''
                     ser.write(b'> ')
                 
                 else:
