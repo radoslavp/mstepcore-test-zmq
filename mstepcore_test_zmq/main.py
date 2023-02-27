@@ -8,6 +8,7 @@ import pickle
 import datetime
 import sys
 import inspect
+import json
 from mstepcore_test_zmq.common import *
 from pathlib import Path
 from threading import Thread, Timer
@@ -157,8 +158,8 @@ def scheduler(events, callbacks):
     sched_table = {}
 
     for name,e in events.items():
-        x = time.strptime(e[0],'%H:%M:%S')
-        y = time.strptime(e[1],'%H:%M:%S')
+        x = time.strptime(e["interval"],'%H:%M:%S')
+        y = time.strptime(e["shift"],'%H:%M:%S')
         interval_secs = int(datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds())
         shift_secs = int(datetime.timedelta(hours=y.tm_hour,minutes=y.tm_min,seconds=y.tm_sec).total_seconds())
         
@@ -192,18 +193,23 @@ def scheduler(events, callbacks):
 
 ###########################
 
-def main():
-    vars = {}
-    events = {
-        "event1": ["00:00:10", "00:00:03"],
-        "event2": ["00:00:05", "00:00:00"],
-        "event3": ["00:00:10", "00:00:00"],
-        "event4": ["00:00:05", "00:00:00"],
-        "event5": ["00:01:00", "00:00:00"],
-        "event6": ["00:00:01", "00:00:00"]
-    }
+def parseConfig():
+    with open(os.path.dirname(__file__) + "/default_config.json", "r") as cfg_file:
+        config = json.load(cfg_file)
+        return config
     
+    return False
+
+def main():
+    config = parseConfig()
+    
+    if not config:
+        errorPrint("Failed to parse default config.")
+        return False
+
+    vars = {}
     callbacks = {}
+    events = config["events"]    
 
     print("Loading saved variables from file.")
     try:

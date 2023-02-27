@@ -1,0 +1,10 @@
+{
+	"events": {
+		"event1": {"interval":"00:00:10", "shift":"00:00:03"},
+		"event2": {"interval":"00:00:05", "shift":"00:00:03"},
+		"event3": {"interval":"00:00:10", "shift":"00:00:03"},
+		"event4": {"interval":"00:00:05", "shift":"00:00:03"},
+		"event5": {"interval":"00:01:00", "shift":"00:00:03"},
+		"event6": {"interval":"00:00:01", "shift":"00:00:03"}
+	}
+}
