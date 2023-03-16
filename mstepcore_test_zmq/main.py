@@ -195,10 +195,14 @@ def scheduler(events, callbacks):
 
 def publisher(vars):
     while True:
-        if len(vars) > 0 and vars["temp"]:
-            data = vars["temp"]
-            print(f"data: {data}")
-            socket2.send_string(data)
+        if len(vars) > 0:
+            if vars["temp"]:
+                socket2.send_string(f"TEMP {vars['temp']}")
+            if vars["hum"]:
+                socket2.send_string(f"HUMI {vars['hum']}")
+            if vars["pres"]:
+                socket2.send_string(f"PRES {vars['pres']}")
+                
             time.sleep(1)
 
 ###########################
