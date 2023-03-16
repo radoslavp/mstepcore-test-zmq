@@ -20,6 +20,8 @@ USER_MODULES_DIR = "/home/root/modules/"
 context = zmq.Context()
 socket = context.socket(zmq.REP)
 socket.bind("tcp://*:5555")
+socket2 = context.socket(zmq.PUB)
+socket2.bind("tcp://*:5556")
 
 root = Path().cwd()
 
@@ -191,6 +193,14 @@ def scheduler(events, callbacks):
         
         time.sleep(1)
 
+def publisher(vars):
+    while True:
+        if len(vars) > 0 and vars["temp"]:
+            data = vars["temp"]
+            print(f"data: {data}")
+            socket2.send_string(data)
+            time.sleep(1)
+
 ###########################
 
 def parseConfig():
@@ -224,6 +234,7 @@ def main():
     Thread(target = saver, daemon = True, args=(vars, )).start()
     Thread(target = modulesInitializer, daemon = True, args=(callbacks, )).start()
     Thread(target = scheduler, daemon = True, args=(events, callbacks, )).start()
+    Thread(target = publisher, daemon = True, args=(vars, )).start()
     
     print("Running modules.")
     project_dir = os.path.dirname(__file__)
